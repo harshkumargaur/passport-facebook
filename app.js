@@ -21,22 +21,12 @@ this function will protect the routes from unauthorized access
 
 const protect = async function(req,res,next){
     console.log(req.isAuthenticated());
-    next();
-    // try {
-    //     if(req.user){
-    //         const user = await User.findOne({email:req.user.email});
-    //         if (!user) {
-    //             throw new Error('you must register first')
-                
-    //         }
-    //         next();
 
-    //     }else{
-    //         throw new Error('must be logged in')
-    //     }
-    // } catch (error) {
-    //     res.status(400).send(error.message);
-    // }
+    if (req.isAuthenticated()) {
+        next()
+    } else {
+        res.status(401).send("you need to login first")
+    }
 }
 
 
