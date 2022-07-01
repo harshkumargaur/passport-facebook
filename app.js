@@ -20,21 +20,23 @@ this function will protect the routes from unauthorized access
 */
 
 const protect = async function(req,res,next){
-    try {
-        if(req.user){
-            const user = await User.findOne({email:req.user.email});
-            if (!user) {
-                throw new Error('you must register first')
+    console.log(req.isAuthenticated());
+    next();
+    // try {
+    //     if(req.user){
+    //         const user = await User.findOne({email:req.user.email});
+    //         if (!user) {
+    //             throw new Error('you must register first')
                 
-            }
-            next();
+    //         }
+    //         next();
 
-        }else{
-            throw new Error('must be logged in')
-        }
-    } catch (error) {
-        res.status(400).send(error.message);
-    }
+    //     }else{
+    //         throw new Error('must be logged in')
+    //     }
+    // } catch (error) {
+    //     res.status(400).send(error.message);
+    // }
 }
 
 
@@ -67,17 +69,32 @@ passport.deserializeUser(function (profile, done) {
 
 const verify = async function (accessToken, refreshToken, profile, done) {
     console.log(profile);
-    return done(null,profile)
+    const user = await User.findOne({email:profile.emails[0].value,provider:'facebook'});
+
+    if (user) {
+        return done(null,user)
+        
+    } else {
+        const newUser = await User.create({
+            facebookId: profile.id,
+            email:profile.emails[0].value,
+            provider:profile.provider,
+            photo:profile.photos[0].value
+        })
+        console.log(newUser);
+        return done(null,newUser);
+    }
    
 }
 
 passport.use(new facebookStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: 'https://localhost:3000/auth/facebook/callback'
+    callbackURL: 'https://localhost:3000/auth/facebook/callback',
+    profileFields: ['id', 'displayName', 'photos', 'email']
 }, verify));
 
-app.get('/', (req, res) => {
+app.get('/',protect, (req, res) => {
     res.status(200).render('home', { title: 'Home' });
 })
 
@@ -89,7 +106,7 @@ app.get('/auth/facebook/callback',
             failureRedirect : '/'
         }));
 
-app.get('/secret', protect, (req, res) => {
+app.get('/secret', (req, res) => {
     res.render('secret', { title: 'secret' })
 })
 
@@ -105,7 +122,8 @@ app.get('/logout', (req, res) => {
         if (err) {
             console.log(err);
         }
-
+        
+        req.session.destroy();
         res.redirect('/');
     });
 })
