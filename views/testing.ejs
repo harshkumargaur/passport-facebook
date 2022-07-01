@@ -1,0 +1,10 @@
+<%- include('partials/header') %>
+<h1>welcome tester</h1>
+<% if(currentUser){ %>
+    <h1>welcome <%= currentUser.name %> </h1>
+    <img src="<%= currentUser.photo %>" alt="img" />
+<% }else{  %>
+    <h1>welcome tester you need to login</h1>
+    <%} %>
+
+<%- include('partials/footer') %>
